@@ -1,53 +1,47 @@
 import 'package:flutter/material.dart';
-import 'package:nb_utils/nb_utils.dart';
 import 'package:provider/provider.dart';
-import 'package:vnatpro2/app/controllers/modules/main/AuthController.dart';
-import 'package:vnatpro2/app/controllers/modules/main/LocationController.dart';
-import 'package:vnatpro2/app/controllers/modules/main/navbarController.dart';
-import 'package:vnatpro2/app/views/auth/login.dart';
-import 'package:vnatpro2/app/views/modules/attendance/clocks/ClocksScreen.dart';
-import 'package:vnatpro2/app/views/modules/attendance/history/historyScreen.dart';
-import 'package:vnatpro2/app/views/modules/dashboard/dashboard.dart';
-import 'package:vnatpro2/app/views/modules/profile/profileScreen.dart';
-import 'package:vnatpro2/app/views/navbar/navbarscreen.dart';
-import 'package:vnatpro2/app/views/splash/SplashScreen.dart';
-import 'package:vnatpro2/main/store/AppStore.dart';
+import 'package:vnat/screens/attendance/AttendanceCameraView.dart';
+import 'package:vnat/screens/attendance/AttendanceController.dart';
+import 'package:vnat/screens/attendance/AttendanceHistoryController.dart';
+import 'package:vnat/screens/attendance/MainAttendanceView.dart';
+import 'package:vnat/screens/auth/controller/AuthController.dart';
+import 'package:vnat/screens/auth/view/MainAuth.dart';
+import 'package:vnat/screens/attendance/clockin/ClockInMap.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:vnat/screens/dashboard/view/Dashboard.dart';
 
-AppStore appStore = AppStore();
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  await initialize();
-  runApp(MyApp());
+void main() {
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (context) => AuthController()),
+        ChangeNotifierProvider(create: (context) => AttendanceController()),
         ChangeNotifierProvider(
-          create: (_) => LocationController(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => NavBarController(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => AuthController(),
-        )
+            create: (context) => AttendanceHistoryController()),
       ],
       child: MaterialApp(
-        initialRoute: SplashScreen.url,
+        title: 'Flutter Demo',
+        theme: ThemeData(
+          primarySwatch: Colors.blueGrey,
+        ),
         routes: {
-          SplashScreen.url: (context) => SplashScreen(),
-          LoginScreen.url: (context) => LoginScreen(),
-          DashboardScreen.url: (context) => DashboardScreen(),
-          ClocksScreen.url: (context) => ClocksScreen(),
-          HistoryScreen.url: (context) => HistoryScreen(),
-          NavbarScreen.url: (context) => NavbarScreen(),
-          ProfileScreen.url: (context) => ProfileScreen()
+          '/': (context) => const MainAuth(),
+          ClockInMap.route: (context) => ClockInMap(
+                clockType: 0,
+              ),
+          Dashboard.route: (context) => Dashboard(),
+          MainAttendanceView.route: (context) => MainAttendanceView(),
+          AttendanceCameraView.route: (context) => AttendanceCameraView()
         },
+        builder: EasyLoading.init(),
       ),
     );
   }

@@ -31,6 +31,7 @@ class AuthController extends ChangeNotifier {
         // ignore: use_build_context_synchronously
         Navigator.popAndPushNamed(context, Dashboard.route);
       } else {
+        print(response.body);
         // ignore: use_build_context_synchronously
         simple_alert(context, 'Invalid Username Or Password',
             'Please Try Again', AlertType.error, 'OK', () {});

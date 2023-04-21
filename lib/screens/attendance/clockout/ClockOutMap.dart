@@ -1,57 +1,48 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:provider/provider.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:vnat/common/MiscFunctions.dart';
+import 'package:vnat/models/AttendanceModel.dart';
+import 'package:vnat/screens/attendance/AttendanceCameraView.dart';
 import 'package:vnat/screens/attendance/AttendanceController.dart';
 import 'package:vnat/screens/attendance/AttendanceHistoryController.dart';
-import 'package:vnat/screens/attendance/clockout/ClockOutButton.dart';
-import 'package:vnat/screens/attendance/clockout/ClockOutListToday.dart';
-import 'package:vnat/screens/attendance/clockout/ClockOutListYesterday.dart';
-import 'package:vnat/screens/attendance/history/AttendanceHistoryView.dart';
+import 'package:vnat/screens/attendance/clockout/subview/ClockOutAddress.dart';
+import 'package:vnat/screens/attendance/clockout/subview/ClockOutMapView.dart';
 import 'package:vnat/screens/dashboard/view/Dashboard.dart';
-import 'package:vnat/screens/main/drawer/DrawerView.dart';
-import 'package:vnat/screens/attendance/clockin/ClockInMap.dart';
 
-class MainAttendanceView extends StatefulWidget {
-  static const route = 'attendance';
+class ClockOutMap extends StatefulWidget {
+  static const route = 'map-screen';
 
-  const MainAttendanceView({super.key});
+  int clockType;
+
+  ClockOutMap({super.key, required this.clockType});
 
   @override
-  State<MainAttendanceView> createState() => _MainAttendanceViewState();
+  State<ClockOutMap> createState() => _ClockOutMapState();
 }
 
-class _MainAttendanceViewState extends State<MainAttendanceView> {
+class _ClockOutMapState extends State<ClockOutMap> {
+  bool isLoading = true;
   int _selectedIndex = 0;
-
-  String appLabel = '';
-  Object? arguments;
 
   List<Widget> actionButtons = [];
 
-  static const TextStyle optionStyle =
-      TextStyle(fontSize: 30, fontWeight: FontWeight.bold);
-
-  static final List<Widget> _widgetOptions = <Widget>[
-    ClockInMap(
-      clockType: 0,
-    ),
-    ClockOutButton(),
-    AttendanceHistoryView(),
-  ];
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      actionWidget();
-      if (index == 2) {
-        EasyLoading.dismiss();
-        appLabel = 'Attendance History';
-      } else {
-        setLabel();
-      }
-    });
+  Widget getImageWidget(AttendanceModel attModel) {
+    if (attModel.selfFile != null) {
+      return Image.file(
+        File(attModel.selfFile!.path),
+        width: 100,
+        height: 150,
+        fit: BoxFit.fill,
+      );
+    } else {
+      return const Icon(
+        Icons.no_photography_outlined,
+        size: 100,
+      );
+    }
   }
 
   void actionWidget() {
@@ -124,65 +115,73 @@ class _MainAttendanceViewState extends State<MainAttendanceView> {
     }
   }
 
+  void initAttendance() async {
+    await Provider.of<AttendanceController>(context, listen: false)
+        .initAttendance(widget.clockType);
+    if (mounted) {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
   @override
   void initState() {
-    setLabel();
-    actionWidget();
+    initAttendance();
     super.initState();
   }
 
-  void setLabel() {
-    appLabel = _selectedIndex == 0
-        ? 'Attendance - Clock In'
-        : 'Attendance - Clock Out';
-  }
-
   @override
-  void dispose() {
-    super.dispose();
+  void didUpdateWidget(covariant ClockOutMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    isLoading = true;
+    Provider.of<AttendanceController>(context, listen: false).resetCur();
+    initAttendance();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade200,
-      appBar: AppBar(
-        title: Text(appLabel),
-        backgroundColor: const Color(0xff020080),
-        actions: actionButtons,
-      ),
-      body: Center(
-        child: _widgetOptions.elementAt(_selectedIndex),
-      ),
-      drawer: DrawerView(),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.punch_clock,
-              color: Colors.green,
+    var attClass = Provider.of<AttendanceController>(context);
+
+    if (isLoading) {
+      EasyLoading.show(status: '...Preparing Location Data');
+      return Container();
+    } else {
+      EasyLoading.dismiss();
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: const Color(0xff020080),
+          title: Text('Clock Out Today'),
+        ),
+        body: Stack(
+          children: [
+            ClockOutMapView(),
+            ClockOutAddress(
+              address: attClass.getCurAttendance().address,
+              imageWidget: getImageWidget(attClass.getCurAttendance()),
             ),
-            label: 'Clock In',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.punch_clock,
-              color: Colors.red,
+            Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                FloatingActionButton(
+                  backgroundColor: const Color(0xffb200080),
+                  onPressed: () {
+                    Navigator.pushNamed(context, AttendanceCameraView.route);
+                  },
+                  child: const Icon(
+                    Icons.camera_alt,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(
+                  height: 25,
+                ),
+              ],
             ),
-            label: 'Clock Out',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.history,
-              color: Color(0xff020080),
-            ),
-            label: 'History',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.amber[800],
-        onTap: _onItemTapped,
-      ),
-    );
+          ],
+        ),
+      );
+    }
   }
 }

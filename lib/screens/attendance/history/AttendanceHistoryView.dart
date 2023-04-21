@@ -6,6 +6,7 @@ import 'package:vnat/models/AttendanceModel.dart';
 import 'package:vnat/screens/attendance/AttendanceHistoryController.dart';
 
 class AttendanceHistoryView extends StatelessWidget {
+  static const route = 'attendance-history-view';
   AttendanceHistoryView({super.key});
 
   @override
